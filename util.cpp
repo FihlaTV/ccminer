@@ -556,13 +556,10 @@ static json_t *json_rpc_call(CURL *curl, const char *url,
 		free(s);
 	}
 
-	/* JSON-RPC valid response returns a non-null 'result',
-	 * and a null 'error'. */
 	res_val = json_object_get(val, "result");
 	err_val = json_object_get(val, "error");
 
-	if (!res_val || json_is_null(res_val) ||
-	    (err_val && !json_is_null(err_val))) {
+	if (!res_val || (err_val && !json_is_null(err_val))) {
 		char *s = NULL;
 
 		if (err_val) {
@@ -593,6 +590,9 @@ static json_t *json_rpc_call(CURL *curl, const char *url,
 
 		goto err_out;
 	}
+
+	if (json_is_null(res_val)) // handle stupidness in submitblock
+	    json_object_set_new(val, "result", json_true());
 
 	if (hi.reason)
 		json_object_set_new(val, "reject-reason", json_string(hi.reason));
